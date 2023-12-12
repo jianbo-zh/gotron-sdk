@@ -251,10 +251,22 @@ func GetParser(ABI *core.SmartContract_ABI, method string) (eABI.Arguments, erro
 }
 
 // GetInputsParser returns input method parser arguments from ABI
-func GetInputsParser(ABI *core.SmartContract_ABI, method string) (eABI.Arguments, error) {
-	arguments := eABI.Arguments{}
+func GetInputsParser(ABI *core.SmartContract_ABI, methodSign string) (eABI.Arguments, error) {
+
 	for _, entry := range ABI.Entrys {
-		if entry.Name == method {
+		if strings.HasPrefix(methodSign, entry.Name) {
+
+			var types []string
+			for _, out := range entry.Inputs {
+				types = append(types, out.Type)
+			}
+
+			methodSign2 := entry.Name + "(" + strings.Join(types, ",") + ")"
+			if methodSign != methodSign2 {
+				continue
+			}
+
+			arguments := eABI.Arguments{}
 			for _, out := range entry.Inputs {
 				ty, err := eABI.NewType(out.Type, "", nil)
 				if err != nil {
@@ -266,6 +278,7 @@ func GetInputsParser(ABI *core.SmartContract_ABI, method string) (eABI.Arguments
 					Indexed: out.Indexed,
 				})
 			}
+
 			return arguments, nil
 		}
 	}
